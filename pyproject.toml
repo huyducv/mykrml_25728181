@@ -1,6 +1,6 @@
 [project]
 name = "mykrml-25728181"
-version = "0.0.2"
+version = "0.0.3"
 description = "My wonderful convenient python package!"
 readme = "README.md"
 authors = [
