@@ -217,3 +217,49 @@ def split_sets_random(features, target, test_ratio=0.2):
 
 
 
+
+def split_train_val(features, target, test_size=0.2, random_state=42, stratify=True):
+    """Split into a training and a validation set, stratified by default
+
+    Stratification matters whenever the positive class is rare: an unstratified
+    split can vary the positive count enough between the two sides to make the
+    scores incomparable.
+
+    Parameters
+    ----------
+    features : pd.DataFrame
+        Input features
+    target : pd.Series
+        Target column
+    test_size : float
+        Proportion held out for validation (default: 0.2)
+    random_state : int
+        Seed for the split (default: 42)
+    stratify : bool
+        Preserve the target distribution across both sides (default: True)
+
+    Returns
+    -------
+    pd.DataFrame
+        Features for the training set
+    pd.DataFrame
+        Features for the validation set
+    pd.Series
+        Target for the training set
+    pd.Series
+        Target for the validation set
+    """
+    from sklearn.model_selection import train_test_split
+
+    X_train, X_val, y_train, y_val = train_test_split(
+        features,
+        target,
+        test_size=test_size,
+        random_state=random_state,
+        stratify=target if stratify else None,
+    )
+
+    print(f'Training data size: {X_train.shape}')
+    print(f'Validation data size: {X_val.shape}')
+
+    return X_train, X_val, y_train, y_val
