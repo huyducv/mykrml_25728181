@@ -52,6 +52,24 @@ df = cast_categorical(df, ['role', 'region'])
 the date the notebook runs, so re-running it later does not silently change the
 feature.
 
+### Time-series weather workflows
+
+```python
+from mykrml_25728181.data import (
+    aggregate_hourly_to_daily,
+    fetch_open_meteo,
+    open_meteo_frame,
+    split_time_series_by_periods,
+)
+from mykrml_25728181.features import add_future_targets, build_time_series_features
+```
+
+These helpers keep provider access, daily aggregation, calendar-aligned targets,
+past-only lag/rolling features and horizon-aware chronological splits consistent
+between experimentation and deployment. Coordinates, variables, aggregation
+rules, feature names, target horizons and split dates remain caller supplied;
+the package contains no project-specific target formula or location.
+
 ### Feature selection
 
 ```python

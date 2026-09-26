@@ -1,5 +1,71 @@
 import pandas as pd
 
+
+def split_time_series_by_periods(
+    dataset: pd.DataFrame,
+    periods: dict[str, tuple[object, object]],
+    feature_columns: list[str],
+    target_columns: list[str],
+    horizon_days: int,
+    date_column: str = "date",
+) -> tuple[dict[str, dict[str, pd.DataFrame]], pd.DataFrame]:
+    """Split by explicit date periods and purge targets crossing each boundary.
+
+    Parameters are deliberately task-neutral: callers provide the periods,
+    feature and target columns, and maximum forecast horizon.
+    """
+    if horizon_days < 0:
+        raise ValueError("horizon_days must be non-negative")
+    required = {date_column, *feature_columns, *target_columns}
+    missing = sorted(required.difference(dataset.columns))
+    if missing:
+        raise ValueError(f"Missing split columns: {missing}")
+
+    frame = dataset.copy()
+    frame[date_column] = pd.to_datetime(frame[date_column], errors="raise")
+    frame = frame.sort_values(date_column).reset_index(drop=True)
+    if frame[date_column].duplicated().any():
+        raise ValueError("Split dates must be unique")
+
+    splits = {}
+    summaries = []
+    used_dates = set()
+    for name, boundaries in periods.items():
+        start, end = map(pd.Timestamp, boundaries)
+        if end < start:
+            raise ValueError(f"Invalid period for {name}: end precedes start")
+        in_period = frame[date_column].between(start, end)
+        target_dates = frame[date_column] + pd.to_timedelta(horizon_days, unit="D")
+        selected = frame.loc[in_period & target_dates.le(end)].copy()
+        if selected.empty:
+            raise ValueError(f"Empty {name} partition")
+
+        selected_dates = set(selected[date_column])
+        if used_dates.intersection(selected_dates):
+            raise ValueError("Partition dates overlap")
+        used_dates.update(selected_dates)
+
+        selected_target_dates = selected[date_column] + pd.to_timedelta(
+            horizon_days, unit="D"
+        )
+        splits[name] = {
+            "frame": selected.reset_index(drop=True),
+            "X": selected[list(feature_columns)].reset_index(drop=True),
+            "y": selected[list(target_columns)].reset_index(drop=True),
+            "dates": selected[[date_column]].reset_index(drop=True),
+        }
+        summaries.append(
+            {
+                "partition": name,
+                "rows": len(selected),
+                "input_start": selected[date_column].min().date(),
+                "input_end": selected[date_column].max().date(),
+                "latest_target_date": selected_target_dates.max().date(),
+                "boundary_rows_purged": int(in_period.sum() - len(selected)),
+            }
+        )
+    return splits, pd.DataFrame(summaries)
+
 def pop_target(df, target_col):
     """Extract target variable from dataframe
 
@@ -55,7 +121,6 @@ def save_sets(
     Returns
     -------
     """
-    import pandas as pd
 
     if X_train is not None:
       X_train.to_csv(f'{path}X_train.csv', index=False)
@@ -97,8 +162,9 @@ def load_sets(path='../data/processed/'):
     Pandas DataFrame
         Target for the testing set
     """
-    import pandas as pd
     import os.path
+
+    import pandas as pd
 
     X_train = pd.read_csv(f'{path}X_train.csv') if os.path.isfile(f'{path}X_train.csv') else None
     X_val   = pd.read_csv(f'{path}X_val.csv')   if os.path.isfile(f'{path}X_val.csv')   else None

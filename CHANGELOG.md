@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v0.2.0 (26/09/2026)
+
+- Add configurable Open-Meteo acquisition, response validation and hourly-to-daily aggregation.
+- Add calendar-aligned future targets and leakage-safe time-series feature construction.
+- Add explicit date-period splitting with forecast-horizon boundary purging.
+- Make the existing regression and classification score helpers return reusable metric dictionaries while retaining optional console output.
+
 ## v0.0.1 (27/08/2026)
 
 - First release of `mykrml_25728181`!

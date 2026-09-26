@@ -6,7 +6,6 @@ before the filter, after it, and on the source data to justify the drop list.
 """
 
 import numpy as np
-import pandas as pd
 
 
 def correlation_pairs(df, threshold=0.95, numeric_only=True, verbose=True, head=None):

@@ -1,4 +1,4 @@
-def print_regressor_scores(y_preds, y_actuals, set_name=None):
+def print_regressor_scores(y_preds, y_actuals, set_name=None, verbose=True):
     """Print the RMSE and MAE for the provided data
 
     Parameters
@@ -13,16 +13,25 @@ def print_regressor_scores(y_preds, y_actuals, set_name=None):
     Returns
     -------
     """
-    from sklearn.metrics import root_mean_squared_error as rmse
     from sklearn.metrics import mean_absolute_error as mae
+    from sklearn.metrics import r2_score
+    from sklearn.metrics import root_mean_squared_error as rmse
 
-    print(f"RMSE {set_name}: {rmse(y_actuals, y_preds)}")
-    print(f"MAE {set_name}: {mae(y_actuals, y_preds)}")
+    metrics = {
+        "rmse": rmse(y_actuals, y_preds),
+        "mae": mae(y_actuals, y_preds),
+        "r2": r2_score(y_actuals, y_preds),
+    }
+    if verbose:
+        print(f"RMSE {set_name}: {metrics['rmse']}")
+        print(f"MAE {set_name}: {metrics['mae']}")
+        print(f"R2 {set_name}: {metrics['r2']}")
+    return metrics
 
 
 
 
-def print_classifier_scores(y_preds, y_actuals, set_name=None):
+def print_classifier_scores(y_preds, y_actuals, set_name=None, verbose=True):
     """Print the Accuracy and F1 score for the provided data.
     The value of the 'average' parameter for F1 score will be determined according to the number of distinct values of the target variable: 'binary' for bianry classification' or 'weighted' for multi-classs classification
 
@@ -37,14 +46,25 @@ def print_classifier_scores(y_preds, y_actuals, set_name=None):
     Returns
     -------
     """
-    from sklearn.metrics import accuracy_score
-    from sklearn.metrics import f1_score
     import pandas as pd
+    from sklearn.metrics import accuracy_score, balanced_accuracy_score, f1_score
 
-    average = 'weighted' if pd.Series(y_actuals).nunique() > 2 else 'binary'
+    observed_labels = pd.concat([pd.Series(y_actuals), pd.Series(y_preds)], ignore_index=True)
+    average = "weighted" if observed_labels.nunique() > 2 else "binary"
 
-    print(f"Accuracy {set_name}: {accuracy_score(y_actuals, y_preds)}")
-    print(f"F1 {set_name}: {f1_score(y_actuals, y_preds, average=average)}")
+    metrics = {
+        "accuracy": accuracy_score(y_actuals, y_preds),
+        "f1": f1_score(y_actuals, y_preds, average=average),
+        "macro_f1": f1_score(y_actuals, y_preds, average="macro"),
+        "weighted_f1": f1_score(y_actuals, y_preds, average="weighted"),
+        "balanced_accuracy": balanced_accuracy_score(y_actuals, y_preds),
+    }
+    if verbose:
+        print(f"Accuracy {set_name}: {metrics['accuracy']}")
+        print(f"F1 {set_name}: {metrics['f1']}")
+        print(f"Macro F1 {set_name}: {metrics['macro_f1']}")
+        print(f"Balanced accuracy {set_name}: {metrics['balanced_accuracy']}")
+    return metrics
 
 
 
